@@ -12,7 +12,8 @@ PROJECT_PREFIX = (
     "controller",
     "houdini_adapter",
     "actions",
-    "runtime"
+    "runtime",
+    "graph"
 )
 
 
