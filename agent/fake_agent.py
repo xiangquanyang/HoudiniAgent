@@ -2,9 +2,11 @@
 from actions.plan import Plan
 from actions.schemas import Action
 from houdini_adapter import graph_api
-
+from planner.graph_rewrite_planner import GraphRewritePlanner
 
 class FakeAgent(object):
+    def __init__(self):
+        self.graph_rewrite_planner = GraphRewritePlanner()
     # --------------------------------
     # 生成Action
     # --------------------------------
@@ -57,6 +59,26 @@ class FakeAgent(object):
                 )
             )
             return plan
+
+        if "smooth" in text and ("插入" in text or "添加" in text):
+
+            selected_nodes = context.selected_nodes
+
+            if not selected_nodes:
+                return None
+
+            current_node = selected_nodes[0]
+            current_path = current_node["path"]
+
+            return self.graph_rewrite_planner.plan_insert_after(
+                source_node_path=current_path,
+                new_node_type="smooth",
+                new_node_name="smooth1",
+                mode="auto"
+            )
+
+        return None
+
         # 在当前选中节点后面添加mountain节点
         if "mountain" in text:
             selected_nodes = context.selected_nodes
