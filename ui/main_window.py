@@ -41,6 +41,9 @@ class AgentWindow(QtWidgets.QDialog):
         self.execute_button = QtWidgets.QPushButton("Execute")
         self.execute_button.setEnabled(False)
 
+        self.cancel_button = QtWidgets.QPushButton("Cancel")
+        self.cancel_button.setEnabled(False)
+
 
 
         # 添加到layout
@@ -48,6 +51,7 @@ class AgentWindow(QtWidgets.QDialog):
         self.main_layout.addWidget(self.input_edit)
         self.main_layout.addWidget(self.send_button)
         self.main_layout.addWidget(self.execute_button)
+        self.main_layout.addWidget(self.cancel_button)
 
         self.setLayout(self.main_layout)
 
@@ -58,6 +62,7 @@ class AgentWindow(QtWidgets.QDialog):
 
         self.send_button.clicked.connect(self.on_send_clicked)
         self.execute_button.clicked.connect(self.on_execute_clicked)
+        self.cancel_button.clicked.connect(self.on_cancel_clicked)
 
     # -------------------------
     # 点击发送
@@ -85,9 +90,8 @@ class AgentWindow(QtWidgets.QDialog):
         self.chat_history.append(
             "<b>Agent:</b><br>{}".format(safe_response)
         )
-        self.execute_button.setEnabled(
-            result["success"]
-        )
+        self.execute_button.setEnabled(result["success"])
+        self.cancel_button.setEnabled(result["success"])
         logger.info(f"Agent回复：{response}")
         # 清空输入框
         self.input_edit.clear()
@@ -103,3 +107,20 @@ class AgentWindow(QtWidgets.QDialog):
             "<b>Agent:</b><br>{}".format(safe_response)
         )
         self.execute_button.setEnabled(False)
+        self.cancel_button.setEnabled(False)
+
+    # -------------------------
+    # 点击取消
+    # -------------------------
+    def on_cancel_clicked(self):
+        result = self.controller.cancel_pending_plan()
+
+        response = result["message"]
+        safe_response = response.replace("\n", "<br>")
+
+        self.chat_history.append(
+            "<b>Agent:</b><br>{}".format(safe_response)
+        )
+
+        self.execute_button.setEnabled(False)
+        self.cancel_button.setEnabled(False)

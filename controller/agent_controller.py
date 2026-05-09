@@ -60,6 +60,21 @@ class AgentController(object):
         }
 
     # --------------------------------
+    # 取消执行已生成的Plan
+    # --------------------------------
+    def cancel_pending_plan(self):
+        if self.pending_plan is None:
+            return {
+                "success": False,
+                "message": "当前没有待取消的计划"
+            }
+        self.pending_plan = None
+        return {
+            "success": True,
+            "message": "已取消当前执行计划"
+        }
+
+    # --------------------------------
     # 处理用户输入
     # --------------------------------
     def process_user_message(self, text):
