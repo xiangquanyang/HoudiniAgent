@@ -8,6 +8,57 @@ class AgentController(object):
         self.agent = FakeAgent()
         self.executor = ActionExecutor()
         self.scene_inspector = SceneInspector()
+
+        self.pending_plan = None
+
+    # --------------------------------
+    # 构建Plan对象
+    # --------------------------------
+    def build_plan(self, text):
+        context = self.scene_inspector.build_context()
+        plan = self.agent.run(
+            text,
+            context
+        )
+        if plan is None:
+            self.pending_plan = None
+            return {
+                "success": False,
+                "message": "无法理解你的请求"
+            }
+        self.pending_plan = plan
+        return {
+            "success": True,
+            "message": "执行计划：\n{}".format(
+                plan.to_preview_text()
+            )
+        }
+    # --------------------------------
+    # 执行Plan对象中的Action
+    # --------------------------------
+    def execute_pending_plan(self):
+        if self.pending_plan is None:
+            return {
+                "success": False,
+                "message": "没有待执行的计划"
+            }
+        results = self.executor.execute_plan(
+            self.pending_plan
+        )
+        success_count = 0
+        for result in results:
+            if result.get("success"):
+                success_count += 1
+        total_count = len(results)
+        self.pending_plan = None
+        return {
+            "success": True,
+            "message": "执行完成：成功 {}/{} 步".format(
+                success_count,
+                total_count
+            )
+        }
+
     # --------------------------------
     # 处理用户输入
     # --------------------------------

@@ -38,10 +38,16 @@ class AgentWindow(QtWidgets.QDialog):
         # 设置输入框高度
         self.input_edit.setFixedHeight(100)
 
+        self.execute_button = QtWidgets.QPushButton("Execute")
+        self.execute_button.setEnabled(False)
+
+
+
         # 添加到layout
         self.main_layout.addWidget(self.chat_history)
         self.main_layout.addWidget(self.input_edit)
         self.main_layout.addWidget(self.send_button)
+        self.main_layout.addWidget(self.execute_button)
 
         self.setLayout(self.main_layout)
 
@@ -51,6 +57,7 @@ class AgentWindow(QtWidgets.QDialog):
     def create_connections(self):
 
         self.send_button.clicked.connect(self.on_send_clicked)
+        self.execute_button.clicked.connect(self.on_execute_clicked)
 
     # -------------------------
     # 点击发送
@@ -59,7 +66,6 @@ class AgentWindow(QtWidgets.QDialog):
 
         # 获取用户输入
         text = self.input_edit.toPlainText()
-
         # 去除首尾空格
         text = text.strip()
 
@@ -67,21 +73,33 @@ class AgentWindow(QtWidgets.QDialog):
         if not text:
             return
 
-
         # 显示到聊天记录
         self.chat_history.append(
             "<b>User:</b> {}".format(text)
         )
         logger.info(f"用户输入：{text}")
         # 调用Controller
-        response = self.controller.process_user_message(
-            text
-        )
+        result = self.controller.build_plan(text)
+        response = result["message"]
         safe_response = response.replace("\n", "<br>")
-        # 显示Agent回复
         self.chat_history.append(
             "<b>Agent:</b><br>{}".format(safe_response)
+        )
+        self.execute_button.setEnabled(
+            result["success"]
         )
         logger.info(f"Agent回复：{response}")
         # 清空输入框
         self.input_edit.clear()
+
+    # -------------------------
+    # 点击执行
+    # -------------------------
+    def on_execute_clicked(self):
+        result = self.controller.execute_pending_plan()
+        response = result["message"]
+        safe_response = response.replace("\n", "<br>")
+        self.chat_history.append(
+            "<b>Agent:</b><br>{}".format(safe_response)
+        )
+        self.execute_button.setEnabled(False)
