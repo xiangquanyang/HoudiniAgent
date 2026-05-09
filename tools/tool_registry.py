@@ -16,6 +16,7 @@ from tools.graph.get_last_node_tool import (
 from tools.graph.insert_node_tool import (
     InsertNodeTool
 )
+from tools.graph.insert_shared_node_tool import InsertSharedNodeTool
 
 class ToolRegistry(object):
     """
@@ -32,6 +33,7 @@ class ToolRegistry(object):
         self.register(GetDisplayNodeTool())
         self.register(GetLastNodeTool())
         self.register(InsertNodeTool())
+        self.register(InsertSharedNodeTool())
     # -----------------------------
     # 注册Tool
     # -----------------------------

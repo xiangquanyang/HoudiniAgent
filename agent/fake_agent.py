@@ -126,27 +126,16 @@ class FakeAgent(object):
                 return None
             current_node = selected_nodes[0]
             current_path = current_node["path"]
-            # 获取下游节点
-            edges = graph_api.get_output_edges(
-                current_path
-            )
-            if not edges:
-                return None
-            plan = Plan()
-            for edge in edges:
-                plan.add_action(
-                    Action(
-                        tool="insert_node",
-                        args={
-                            "input_node_path":
-                                edge.input_node_path,
-                            "output_node_path":
-                                edge.output_node_path,
-                            "new_node_type":
-                                "smooth"
-                        }
-                    )
+            plan.add_action(
+                Action(
+                    tool="insert_shared_node",
+                    args={
+                        "source_node_path": current_path,
+                        "new_node_type": "smooth",
+                        "new_node_name": "smooth1"
+                    }
                 )
+            )
 
             return plan
 
