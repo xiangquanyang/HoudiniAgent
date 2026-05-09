@@ -41,7 +41,11 @@ class GraphRewritePlanner(object):
                         "source_node_path": source_node_path,
                         "new_node_type": new_node_type,
                         "new_node_name": new_node_name
-                    }
+                    },
+                    description="在 {} 后创建并连接一个 {} 节点".format(
+                        source_node_path,
+                        new_node_type
+                    )
                 )
             )
             return plan
@@ -59,7 +63,12 @@ class GraphRewritePlanner(object):
                         "output_node_path": edge.output_node_path,
                         "new_node_type": new_node_type,
                         "new_node_name": new_node_name
-                    }
+                    },
+                    description="在 {} 和 {} 之间插入 {} 节点".format(
+                        edge.input_node_path,
+                        edge.output_node_path,
+                        new_node_type
+                    )
                 )
             )
             return plan
@@ -98,7 +107,11 @@ class GraphRewritePlanner(object):
                     "source_node_path": source_node_path,
                     "new_node_type": new_node_type,
                     "new_node_name": new_node_name
-                }
+                },
+                description="在 {} 后插入一个共享的 {} 节点，并保持所有下游连接".format(
+                    source_node_path,
+                    new_node_type
+                )
             )
         )
 

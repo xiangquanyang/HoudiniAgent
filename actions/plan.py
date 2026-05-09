@@ -16,3 +16,16 @@ class Plan(object):
             action.to_dict()
             for action in self.actions
         ]
+
+
+    def to_preview_text(self):
+        """输出Plan信息"""
+        lines = []
+        for index, action in enumerate(self.actions):
+            lines.append(
+                "{}. {}".format(
+                    index + 1,
+                    action.to_preview_text()
+                )
+            )
+        return "\n".join(lines)

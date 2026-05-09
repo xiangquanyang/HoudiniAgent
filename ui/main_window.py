@@ -77,9 +77,10 @@ class AgentWindow(QtWidgets.QDialog):
         response = self.controller.process_user_message(
             text
         )
+        safe_response = response.replace("\n", "<br>")
         # 显示Agent回复
         self.chat_history.append(
-            "<b>Agent:</b> {}".format(response)
+            "<b>Agent:</b><br>{}".format(safe_response)
         )
         logger.info(f"Agent回复：{response}")
         # 清空输入框
