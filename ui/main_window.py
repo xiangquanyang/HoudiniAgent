@@ -10,6 +10,7 @@ from controller.agent_controller import AgentController
 class AgentWindow(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super(AgentWindow, self).__init__(parent)
+        self.stream_cursor = None
         self.pending_agent_cursor = None
         self.plan_thread = None
         self.plan_worker = None
@@ -21,6 +22,21 @@ class AgentWindow(QtWidgets.QDialog):
         )
         self.build_ui()
         self.create_connections()
+
+    def start_streaming_agent_message(self):
+        self.streaming_text = ""
+        self.chat_history.append("<b>Agent:</b>")
+        self.stream_cursor = self.chat_history.textCursor()
+        self.stream_cursor.movePosition(self.stream_cursor.End)
+
+    def append_streaming_token(self, token):
+        """对话框中增加流式输出信息"""
+        if self.stream_cursor is None:
+            self.start_streaming_agent_message()
+        safe_token = token.replace("\n", "<br>")
+        self.stream_cursor.insertHtml(safe_token)
+        self.chat_history.setTextCursor(self.stream_cursor)
+        self.chat_history.ensureCursorVisible()
 
     # 底部状态栏更新
     def set_status(self, status):
@@ -137,25 +153,44 @@ class AgentWindow(QtWidgets.QDialog):
             "<b>User:</b> {}".format(text)
         )
         self.add_pending_agent_message()
+        # self.start_streaming_agent_message()
         self.input_edit.clear()
         self.set_status("Building Plan")
         self.send_button.setEnabled(False)
         self.execute_button.setEnabled(False)
         self.cancel_button.setEnabled(False)
 
+        self.on_agent_status_received(
+            "正在分析当前场景..."
+        )
         context = self.controller.build_scene_context()
         self.start_build_plan_thread(
             text,
             context
         )
 
+    def on_streaming_token_received(self, token):
+        """stream方式调用收到返回结果"""
+        self.append_streaming_token(token)
+
+    def on_agent_status_received(self, status):
+        self.chat_history.append(
+            "<span style='color:gray;'>"
+            "Agent: {}"
+            "</span>".format(status)
+        )
+
     def start_build_plan_thread(self, text, context):
-        """创建子线程，绑定agent.run到子线程任务中执行，绑定执行后的回调函数"""
+        """创建子线程，绑定agent.run到子线程任务中执行，绑定执行后各种信号的回调函数"""
         self.plan_thread = QtCore.QThread(self)
         self.plan_worker = PlanBuildWorker(
             self.controller,
             text,
             context
+        )
+
+        self.plan_worker.status_received.connect(
+            self.on_agent_status_received
         )
 
         self.plan_worker.moveToThread(
@@ -202,8 +237,10 @@ class AgentWindow(QtWidgets.QDialog):
             "\n",
             "<br>"
         )
-        self.replace_pending_agent_message(
-            response
+        self.chat_history.append(
+            "<b>Plan Preview:</b><br>{}".format(
+                safe_response
+            )
         )
         success = result.get("success", False)
         self.execute_button.setEnabled(success)

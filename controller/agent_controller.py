@@ -13,6 +13,35 @@ class AgentController(object):
 
         self.pending_plan = None
 
+    def stream_build_plan_with_context(self, text, context, on_token):
+        full_text = ""
+        for token in self.agent.stream_plan_text(text, context):
+            full_text += token
+            if on_token:
+                on_token(token)
+        plan_data = self.agent.parse_json(full_text)
+        if not plan_data:
+            self.pending_plan = None
+            return {
+                "success": False,
+                "message": "LLM返回内容无法解析为Plan"
+            }
+        plan = self.agent.build_plan(plan_data)
+        if plan is None:
+            self.pending_plan = None
+            return {
+                "success": False,
+                "message": "无法生成执行计划"
+            }
+        self.pending_plan = plan
+        return {
+            "success": True,
+            "message": "执行计划：\n{}".format(
+                plan.to_preview_text()
+            )
+        }
+
+
     # --------------------------------
     # 构建Plan对象
     # --------------------------------

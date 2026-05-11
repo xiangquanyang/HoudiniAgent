@@ -11,6 +11,16 @@ class TongyiAgent(object):
     def __init__(self):
         self.llm = create_tongyi_llm()
 
+    def stream_plan_text(self, text, context):
+        messages = [
+            SystemMessage(content=self.build_system_prompt()),
+            HumanMessage(content=self.build_user_prompt(text, context))
+        ]
+        for chunk in self.llm.stream(messages):
+            content = getattr(chunk, "content", "")
+            if content:
+                yield content
+
     def run(self, text, context):
         messages = [
             SystemMessage(content=self.build_system_prompt()),
