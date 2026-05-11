@@ -5,15 +5,15 @@ PROJECT_PREFIX = (
     "launcher",
     "ui",
     "agent",
-    "rag",
-    "tools",
-    "llm",
-    "utils",
-    "controller",
-    "houdini_adapter",
+    "planner",
     "actions",
+    "tools",
+    "scene",
+    "graph",
     "runtime",
-    "graph"
+    "llm",
+    "controller",
+    "houdini_adapter"
 )
 
 

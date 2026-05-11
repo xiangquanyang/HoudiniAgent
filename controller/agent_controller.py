@@ -2,10 +2,12 @@
 from agent.fake_agent import FakeAgent
 from actions.action_executor import ActionExecutor
 from scene.scene_inspector import SceneInspector
+from agent.tongyi_agent import TongyiAgent
 
 class AgentController(object):
     def __init__(self):
-        self.agent = FakeAgent()
+        # self.agent = FakeAgent()
+        self.agent = TongyiAgent()
         self.executor = ActionExecutor()
         self.scene_inspector = SceneInspector()
 
@@ -15,7 +17,8 @@ class AgentController(object):
     # 构建Plan对象
     # --------------------------------
     def build_plan(self, text):
-        context = self.scene_inspector.build_context()
+        # context = self.scene_inspector.build_context()
+        context = self.scene_inspector.get_network_connection()
         plan = self.agent.run(
             text,
             context

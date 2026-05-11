@@ -2,6 +2,7 @@
 
 from scene.scene_context import SceneContext
 from houdini_adapter import scene_api
+from houdini_adapter.graph_api import get_network_connection
 
 class SceneInspector(object):
     # --------------------------------
@@ -21,7 +22,7 @@ class SceneInspector(object):
                 "type": node.type().name()
             })
         # --------------------------------
-        # 获取当前network
+        # 获取当前所在network路径
         # --------------------------------
         network = scene_api.get_current_network()
         # 往context中存放当前network信息
@@ -31,3 +32,6 @@ class SceneInspector(object):
                 network.path()
             )
         return context
+
+    def get_network_connection(self):
+        return get_network_connection()

@@ -18,6 +18,12 @@ class AgentWindow(QtWidgets.QDialog):
         self.build_ui()
         self.create_connections()
 
+    # 底部状态栏更新
+    def set_status(self, status):
+        self.status_label.setText(
+            "Status: {}".format(status)
+        )
+
     # -------------------------
     # 创建UI
     # -------------------------
@@ -44,6 +50,7 @@ class AgentWindow(QtWidgets.QDialog):
         self.cancel_button = QtWidgets.QPushButton("Cancel")
         self.cancel_button.setEnabled(False)
 
+        self.status_label = QtWidgets.QLabel("Status: Ready")
 
 
         # 添加到layout
@@ -52,6 +59,7 @@ class AgentWindow(QtWidgets.QDialog):
         self.main_layout.addWidget(self.send_button)
         self.main_layout.addWidget(self.execute_button)
         self.main_layout.addWidget(self.cancel_button)
+        self.main_layout.addWidget(self.status_label)
 
         self.setLayout(self.main_layout)
 
@@ -83,8 +91,14 @@ class AgentWindow(QtWidgets.QDialog):
             "<b>User:</b> {}".format(text)
         )
         logger.info(f"用户输入：{text}")
+        self.set_status("Building Plan")
         # 调用Controller
         result = self.controller.build_plan(text)
+        # 更新状态栏
+        if result["success"]:
+            self.set_status("Pending Plan")
+        else:
+            self.set_status("Failed")
         response = result["message"]
         safe_response = response.replace("\n", "<br>")
         self.chat_history.append(
@@ -100,7 +114,12 @@ class AgentWindow(QtWidgets.QDialog):
     # 点击执行
     # -------------------------
     def on_execute_clicked(self):
+        self.set_status("Executing")
         result = self.controller.execute_pending_plan()
+        if result["success"]:
+            self.set_status("Executed")
+        else:
+            self.set_status("Failed")
         response = result["message"]
         safe_response = response.replace("\n", "<br>")
         self.chat_history.append(
@@ -114,7 +133,10 @@ class AgentWindow(QtWidgets.QDialog):
     # -------------------------
     def on_cancel_clicked(self):
         result = self.controller.cancel_pending_plan()
-
+        if result["success"]:
+            self.set_status("Cancelled")
+        else:
+            self.set_status("Ready")
         response = result["message"]
         safe_response = response.replace("\n", "<br>")
 

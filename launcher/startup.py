@@ -9,7 +9,6 @@ window_instance = None
 
 
 def show_agent():
-
     global window_instance
     # 关闭旧窗口
     try:
