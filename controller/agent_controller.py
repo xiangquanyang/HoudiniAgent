@@ -16,9 +16,14 @@ class AgentController(object):
     # --------------------------------
     # 构建Plan对象
     # --------------------------------
-    def build_plan(self, text):
+    def build_scene_context(self):
+        """获取houdini的Network节点连接情况，主线程执行"""
+        return self.scene_inspector.get_network_connection()
+
+    def build_plan_with_context(self, text, context):
+        """调用llm，子线程执行"""
         # context = self.scene_inspector.build_context()
-        context = self.scene_inspector.get_network_connection()
+        # context = self.scene_inspector.get_network_connection()
         plan = self.agent.run(
             text,
             context

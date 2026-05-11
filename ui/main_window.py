@@ -2,6 +2,7 @@
 
 from PySide2 import QtWidgets
 from PySide2 import QtCore
+from ui.llm_worker import PlanBuildWorker
 
 from utils.logger_handler import logger
 from controller.agent_controller import AgentController
@@ -9,6 +10,9 @@ from controller.agent_controller import AgentController
 class AgentWindow(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super(AgentWindow, self).__init__(parent)
+        self.pending_agent_cursor = None
+        self.plan_thread = None
+        self.plan_worker = None
         self.controller = AgentController()
         self.setWindowTitle("Houdini Agent")
         self.resize(600, 400)
@@ -63,6 +67,22 @@ class AgentWindow(QtWidgets.QDialog):
 
         self.setLayout(self.main_layout)
 
+    def add_pending_agent_message(self):
+        """添加llm思考时的占位"""
+        self.chat_history.append(
+            "<b>Agent:思考中...</b>"
+        )
+
+    def replace_pending_agent_message(
+            self,
+            text):
+        """llm思考完成后替换之前添加的占位状态"""
+        self.chat_history.append(
+            "<b>Agent:</b><br>{}".format(
+                text.replace("\n", "<br>")
+            )
+        )
+
     # -------------------------
     # 信号连接
     # -------------------------
@@ -75,40 +95,134 @@ class AgentWindow(QtWidgets.QDialog):
     # -------------------------
     # 点击发送
     # -------------------------
+    # def on_send_clicked(self):
+    #
+    #     # 获取用户输入
+    #     text = self.input_edit.toPlainText()
+    #     # 去除首尾空格
+    #     text = text.strip()
+    #
+    #     # 空输入直接返回
+    #     if not text:
+    #         return
+    #
+    #     # 显示到聊天记录
+    #     self.chat_history.append(
+    #         "<b>User:</b> {}".format(text)
+    #     )
+    #     logger.info(f"用户输入：{text}")
+    #     self.set_status("Building Plan")
+    #     # 调用Controller
+    #     result = self.controller.build_plan(text)
+    #     # 更新状态栏
+    #     if result["success"]:
+    #         self.set_status("Pending Plan")
+    #     else:
+    #         self.set_status("Failed")
+    #     response = result["message"]
+    #     safe_response = response.replace("\n", "<br>")
+    #     self.chat_history.append(
+    #         "<b>Agent:</b><br>{}".format(safe_response)
+    #     )
+    #     self.execute_button.setEnabled(result["success"])
+    #     self.cancel_button.setEnabled(result["success"])
+    #     logger.info(f"Agent回复：{response}")
+    #     # 清空输入框
+    #     self.input_edit.clear()
     def on_send_clicked(self):
-
-        # 获取用户输入
-        text = self.input_edit.toPlainText()
-        # 去除首尾空格
-        text = text.strip()
-
-        # 空输入直接返回
+        text = self.input_edit.toPlainText().strip()
         if not text:
             return
-
-        # 显示到聊天记录
         self.chat_history.append(
             "<b>User:</b> {}".format(text)
         )
-        logger.info(f"用户输入：{text}")
+        self.add_pending_agent_message()
+        self.input_edit.clear()
         self.set_status("Building Plan")
-        # 调用Controller
-        result = self.controller.build_plan(text)
-        # 更新状态栏
-        if result["success"]:
+        self.send_button.setEnabled(False)
+        self.execute_button.setEnabled(False)
+        self.cancel_button.setEnabled(False)
+
+        context = self.controller.build_scene_context()
+        self.start_build_plan_thread(
+            text,
+            context
+        )
+
+    def start_build_plan_thread(self, text, context):
+        """创建子线程，绑定agent.run到子线程任务中执行，绑定执行后的回调函数"""
+        self.plan_thread = QtCore.QThread(self)
+        self.plan_worker = PlanBuildWorker(
+            self.controller,
+            text,
+            context
+        )
+
+        self.plan_worker.moveToThread(
+            self.plan_thread
+        )
+
+        self.plan_thread.started.connect(
+            self.plan_worker.run
+        )
+
+        self.plan_worker.finished.connect(
+            self.on_plan_build_finished
+        )
+
+        self.plan_worker.failed.connect(
+            self.on_plan_build_failed
+        )
+
+        self.plan_worker.finished.connect(
+            self.plan_thread.quit
+        )
+
+        self.plan_worker.failed.connect(
+            self.plan_thread.quit
+        )
+
+        self.plan_thread.finished.connect(
+            self.plan_worker.deleteLater
+        )
+
+        self.plan_thread.finished.connect(
+            self.plan_thread.deleteLater
+        )
+
+        self.plan_thread.start()
+
+    def on_plan_build_finished(self, result):
+        """执行完成后的回调"""
+        response = result.get(
+            "message",
+            "没有返回内容"
+        )
+        safe_response = response.replace(
+            "\n",
+            "<br>"
+        )
+        self.replace_pending_agent_message(
+            response
+        )
+        success = result.get("success", False)
+        self.execute_button.setEnabled(success)
+        self.cancel_button.setEnabled(success)
+        self.send_button.setEnabled(True)
+        if success:
             self.set_status("Pending Plan")
         else:
             self.set_status("Failed")
-        response = result["message"]
-        safe_response = response.replace("\n", "<br>")
-        self.chat_history.append(
-            "<b>Agent:</b><br>{}".format(safe_response)
+
+    def on_plan_build_failed(self, error_message):
+        """执行失败的回调"""
+        self.replace_pending_agent_message(
+            "错误：{}".format(error_message)
         )
-        self.execute_button.setEnabled(result["success"])
-        self.cancel_button.setEnabled(result["success"])
-        logger.info(f"Agent回复：{response}")
-        # 清空输入框
-        self.input_edit.clear()
+        self.send_button.setEnabled(True)
+        self.execute_button.setEnabled(False)
+        self.cancel_button.setEnabled(False)
+        self.set_status("Failed")
 
     # -------------------------
     # 点击执行
