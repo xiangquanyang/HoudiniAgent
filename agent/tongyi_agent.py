@@ -13,10 +13,10 @@ class TongyiAgent(object):
         self.llm = create_tongyi_llm()
         self.tool_registry = ToolRegistry()
 
-    def stream_plan_text(self, text, context):
+    def stream_plan_text(self, text, context, memory):
         messages = [
             SystemMessage(content=self.build_system_prompt()),
-            HumanMessage(content=self.build_user_prompt(text, context))
+            HumanMessage(content=self.build_user_prompt(text, context, memory))
         ]
         for chunk in self.llm.stream(messages):
             content = getattr(chunk, "content", "")
@@ -39,9 +39,6 @@ class TongyiAgent(object):
         return self.build_plan(plan_data)
     def build_system_prompt(self):
         tool_text = self.tool_registry.get_prompt_text()
-        print("----------------tool_text--------------")
-        print(tool_text)
-        print("\n")
         return f"""
 你是一个 Houdini Agent Planner。
 
@@ -79,19 +76,26 @@ class TongyiAgent(object):
 - 你需要分析我给你的当前 Houdini 场景上下文，特别是当前节点的连接关系，根据当前节点所连接的节点数量，选择合适的工具。
 - 如果用户要求添加 smooth，new_node_type 使用 "smooth"。
 - 如果用户要求添加 mountain，new_node_type 使用 "mountain"。
+- 如果用户提到“之前生成的节点”、“刚才创建的节点”、“之前的 smooth 节点”，需要优先参考 Agent 记忆。
+- 如果 Agent 记忆中存在多个匹配节点，需要为每个节点生成对应 action。
 - description 必须是中文。
 """
 
-    def build_user_prompt(self, text, context):
+    def build_user_prompt(self, text, context, memory=''):
+
         prompt = """
 用户请求：
 {user_text}
 
 当前 Houdini 场景上下文：
 {context}
+
+Agent 记忆：
+{memory}
 """.format(
             user_text=text,
-            context=context
+            context=context,
+            memory=memory
         )
         # print(context)
         return prompt

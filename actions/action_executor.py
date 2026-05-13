@@ -9,11 +9,12 @@ from runtime.execution_state import (
 
 class ActionExecutor(object):
     """根据schemas获取tool，并调用tool的run方法执行"""
-    def __init__(self):
+    def __init__(self, memory=None):
         self.tool_registry = ToolRegistry()
         self.execution_context = (
             ExecutionContext()
         )
+        self.memory = memory
 
     # --------------------------------
     # 执行Plan
@@ -29,6 +30,11 @@ class ActionExecutor(object):
             # 更新Runtime Context，记录当前action所创建的节点路径
             self.update_context(result)
             results.append(result)
+            if self.memory is not None:
+                self.memory.remember_action(
+                    action,
+                    result
+                )
         return results
 
     # --------------------------------

@@ -3,19 +3,21 @@ from agent.fake_agent import FakeAgent
 from actions.action_executor import ActionExecutor
 from scene.scene_inspector import SceneInspector
 from agent.tongyi_agent import TongyiAgent
+from memory.agent_memory import AgentMemory
 
 class AgentController(object):
     def __init__(self):
         # self.agent = FakeAgent()
+        self.memory = AgentMemory()
         self.agent = TongyiAgent()
-        self.executor = ActionExecutor()
+        self.executor = ActionExecutor(memory=self.memory)
         self.scene_inspector = SceneInspector()
 
         self.pending_plan = None
 
     def stream_build_plan_with_context(self, text, context, on_token):
         full_text = ""
-        for token in self.agent.stream_plan_text(text, context):
+        for token in self.agent.stream_plan_text(text, context, self.memory):
             full_text += token
             if on_token:
                 on_token(token)
@@ -142,3 +144,10 @@ class AgentController(object):
             success_count,
             len(results)
         )
+
+    def clear_memory(self):
+        self.memory.clear()
+        return {
+            "success": True,
+            "message": "Agent 记忆已清空"
+        }

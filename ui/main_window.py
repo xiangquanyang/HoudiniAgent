@@ -70,6 +70,9 @@ class AgentWindow(QtWidgets.QDialog):
         self.cancel_button = QtWidgets.QPushButton("Cancel")
         self.cancel_button.setEnabled(False)
 
+        self.clear_memory_button = QtWidgets.QPushButton("Clear Memory")
+        self.clear_memory_button.setEnabled(True)
+
         self.status_label = QtWidgets.QLabel("Status: Ready")
 
 
@@ -79,6 +82,7 @@ class AgentWindow(QtWidgets.QDialog):
         self.main_layout.addWidget(self.send_button)
         self.main_layout.addWidget(self.execute_button)
         self.main_layout.addWidget(self.cancel_button)
+        self.main_layout.addWidget(self.clear_memory_button)
         self.main_layout.addWidget(self.status_label)
 
         self.setLayout(self.main_layout)
@@ -107,6 +111,7 @@ class AgentWindow(QtWidgets.QDialog):
         self.send_button.clicked.connect(self.on_send_clicked)
         self.execute_button.clicked.connect(self.on_execute_clicked)
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
+        self.clear_memory_button.clicked.connect(self.on_clear_clicked)
 
     # -------------------------
     # 点击发送
@@ -297,3 +302,6 @@ class AgentWindow(QtWidgets.QDialog):
 
         self.execute_button.setEnabled(False)
         self.cancel_button.setEnabled(False)
+
+    def on_clear_clicked(self):
+        self.controller.clear_memory()
