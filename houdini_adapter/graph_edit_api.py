@@ -44,6 +44,10 @@ def insert_shared_node_after(
     if not connections:
         return None
     # 创建共享新节点
+    print("--------------new_node_type-----------")
+    print(new_node_type)
+    print("--------------new_node_name-----------")
+    print(new_node_name)
     new_node = parent.createNode(
         new_node_type,
         node_name=new_node_name

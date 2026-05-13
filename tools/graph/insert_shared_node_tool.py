@@ -14,7 +14,13 @@ from houdini_adapter import graph_edit_api
 #  └── null1
 class InsertSharedNodeTool(BaseTool):
     name = "insert_shared_node"
-    description = "Insert one shared node after source node and reconnect all downstream nodes"
+    description = "在一个 Houdini 节点后插入一个共享 SOP 节点，并保持所有下游连接。如果源节点连接了多个下游节点，在插入节点时使用当前工具。"
+
+    args_schema = {
+        "source_node_path": "源节点路径",
+        "new_node_type": "要插入的 SOP 节点类型",
+        "new_node_name": "新节点名称，不能为空，不能和已有节点名字相同"
+    }
     def run(self,
             source_node_path,
             new_node_type,

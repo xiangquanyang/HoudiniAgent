@@ -20,6 +20,8 @@ class AgentController(object):
             if on_token:
                 on_token(token)
         plan_data = self.agent.parse_json(full_text)
+        print('LLM Response:')
+        print(plan_data)
         if not plan_data:
             self.pending_plan = None
             return {

@@ -6,10 +6,12 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from llm.tongyi_client import create_tongyi_llm
 from actions.schemas import Action
 from actions.plan import Plan
+from tools.tool_registry import ToolRegistry
 
 class TongyiAgent(object):
     def __init__(self):
         self.llm = create_tongyi_llm()
+        self.tool_registry = ToolRegistry()
 
     def stream_plan_text(self, text, context):
         messages = [
@@ -36,64 +38,41 @@ class TongyiAgent(object):
             return None
         return self.build_plan(plan_data)
     def build_system_prompt(self):
-        return """
+        tool_text = self.tool_registry.get_prompt_text()
+        print("----------------tool_text--------------")
+        print(tool_text)
+        print("\n")
+        return f"""
 你是一个 Houdini Agent Planner。
 
-你的任务不是直接写 Python 代码，也不是直接调用 hou API。
-你的任务是根据用户意图和分析当前 Houdini 场景上下文，生成结构化执行计划。
+你的任务是根据用户请求和当前 Houdini 场景上下文，生成 JSON 执行计划。
 
-你只能输出 JSON，不要输出解释文字，不要输出 Markdown。
+你不能写 Python 代码。
+你不能直接调用 hou API。
+你只能从下面的工具列表中选择工具。
 
-JSON 格式必须是：
+可用工具如下：
 
-{
+{tool_text}
+
+输出格式必须是 JSON：
+
+{{
   "actions": [
-    {
+    {{
       "tool": "工具名",
-      "args": {
+      "args": {{
         "参数名": "参数值"
-      },
+      }},
       "description": "给用户看的中文执行说明"
-    },
-    {...}
+    }}
   ]
-}
-
-当前可用工具：
-
-1. create_node_after
-用途：在某个节点后创建并连接一个 SOP 节点。如果该节点后面没有连接其他任何节点，使用这个工具创建 SOP节点
-参数：
-- source_node_path
-- new_node_type
-- new_node_name
-
-2. insert_node
-用途：在两个已有节点之间插入一个节点。如果该节点后面有连接一个其他节点，使用这个工具创建 SOP节点
-参数：
-- input_node_path
-- output_node_path
-- new_node_type
-- new_node_name
-
-3. insert_shared_node
-用途：在一个节点后插入一个共享节点，并保持所有下游连接。如果该节点后面连接了多个其他任何节点，使用这个工具创建 SOP 节点
-参数：
-- source_node_path
-- new_node_type
-- new_node_name
-
-4. set_parm
-用途：设置节点参数。
-参数：
-- node_path
-- parm_name
-- value
-
+}}
 重要规则：
 
+- 只输出 JSON，不要输出 Markdown。。
 - 不允许输出 Python 代码。
-- 不允许调用未列出的工具。
+- tool 必须来自可用工具列表，args 必须符合该 tool 的参数，不允许调用未列出的工具。
 - 如果需要调用多个工具，需要按照调用顺序写在返回的actions列表中
 - Houdini 场景上下文中的Selected Index属性代表当前节点在选中节点集合中的下标，为-1表示没有被选中
 - 如果用户说“当前节点”，优先使用 Selected Index值为0的节点。
@@ -102,6 +81,7 @@ JSON 格式必须是：
 - 如果用户要求添加 mountain，new_node_type 使用 "mountain"。
 - description 必须是中文。
 """
+
     def build_user_prompt(self, text, context):
         prompt = """
 用户请求：
@@ -113,7 +93,7 @@ JSON 格式必须是：
             user_text=text,
             context=context
         )
-        print(context)
+        # print(context)
         return prompt
     def parse_json(self, content):
         try:

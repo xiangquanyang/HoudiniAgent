@@ -2,8 +2,12 @@
 from tools.base_tool import BaseTool
 from houdini_adapter import node_api
 class ConnectNodeTool(BaseTool):
-    name = "connect_nodes"
-    description = "Connect Houdini nodes"
+    name = "connect_node"
+    description = "将上游节点连接到下游节点0号输入端口"
+    args_schema = {
+        "input_path": "上游节点路径",
+        "output_path": "下游节点路径"
+    }
     def run(self,
             input_path,
             output_path):
